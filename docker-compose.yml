@@ -1,0 +1,10 @@
+version: '3'
+services:
+  subparser-go:
+    image: cracktc/subparser-go
+    ports:
+      - 4447:4447
+    volumes:
+      - type: bind
+        source: ./config
+        target: /config
