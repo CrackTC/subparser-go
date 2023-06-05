@@ -110,20 +110,16 @@ func newHandler(confPath string) func(http.ResponseWriter, *http.Request) {
 		remoteConf.Merge(conf)
 		confMutex.RUnlock()
 
-		proxyNames := make(map[string]bool)
-		for _, value := range remoteConf["proxies"].([]interface{}) {
-			proxyNames[value.(config.Config)["name"].(string)] = true
+		proxyNames := make([]string, len(remoteConf["proxies"].([]interface{})))
+		for i, value := range remoteConf["proxies"].([]interface{}) {
+			proxyNames[i] = value.(string)
 		}
 
 		for _, value := range remoteConf["proxy-groups"].([]interface{}) {
 			group := value.(config.Config)
 			if _, ok := group["proxies"]; ok == false {
 				if _, ok := group["use"]; ok == false {
-					group["proxies"] = make([]string, len(proxyNames))
-
-					for proxyName := range proxyNames {
-						group["proxies"] = append(group["proxies"].([]string), proxyName)
-					}
+					group["proxies"] = proxyNames
 				}
 			}
 		}
