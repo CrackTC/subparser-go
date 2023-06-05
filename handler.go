@@ -112,7 +112,7 @@ func newHandler(confPath string) func(http.ResponseWriter, *http.Request) {
 
 		proxyNames := make([]string, len(remoteConf["proxies"].([]interface{})))
 		for i, value := range remoteConf["proxies"].([]interface{}) {
-			proxyNames[i] = value.(string)
+			proxyNames[i] = value.(config.Config)["name"].(string)
 		}
 
 		for _, value := range remoteConf["proxy-groups"].([]interface{}) {
