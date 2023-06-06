@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"sora.zip/subparser-go/config"
@@ -26,7 +26,7 @@ func readConf(confPath string) config.Config {
 	return conf
 }
 
-func watchConf(confPath string, conf *config.Config, confMutex *sync.RWMutex) {
+func watchConf(confPath string, conf *atomic.Value) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatalln("[error] cannot create file watcher:", err)
@@ -45,9 +45,7 @@ func watchConf(confPath string, conf *config.Config, confMutex *sync.RWMutex) {
 					if event.Name == confPath {
 						log.Println("[info] detected config change")
 
-						confMutex.Lock()
-						*conf = readConf(confPath)
-						confMutex.Unlock()
+						conf.Store(readConf(confPath))
 					}
 				}
 
@@ -70,10 +68,10 @@ func watchConf(confPath string, conf *config.Config, confMutex *sync.RWMutex) {
 }
 
 func newHandler(confPath string) func(http.ResponseWriter, *http.Request) {
-	conf := readConf(confPath)
-	var confMutex sync.RWMutex
+	var conf atomic.Value
+	conf.Store(readConf(confPath))
 
-	go watchConf(confPath, &conf, &confMutex)
+	go watchConf(confPath, &conf)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -106,9 +104,7 @@ func newHandler(confPath string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		confMutex.RLock()
-		remoteConf.Merge(conf)
-		confMutex.RUnlock()
+		remoteConf.Merge(conf.Load().(config.Config))
 
 		proxyNames := make([]string, len(remoteConf["proxies"].([]any)))
 		for i, value := range remoteConf["proxies"].([]any) {
