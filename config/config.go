@@ -30,7 +30,7 @@ func LoadString(s string) (Config, error) {
 
 func (dest Config) Merge(src Config) {
 	for key, value := range src {
-		if _, ok := dest[key]; ok == false {
+		if _, ok := dest[key]; ok == false || dest[key] == nil {
 			dest[key] = value
 		} else {
 			switch value.(type) {
@@ -46,7 +46,7 @@ func (dest Config) Merge(src Config) {
 }
 
 func (c Config) String() (string, error) {
-	bytes, err := yaml.Marshal(c)
+	bytes, err := yaml.Marshal(&c)
 
 	if err != nil {
 		return "", err
