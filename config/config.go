@@ -30,27 +30,29 @@ func LoadString(s string) (Config, error) {
 
 func (dest Config) Merge(src Config) {
 	for key, value := range src {
-		if _, ok := dest[key]; ok == false || dest[key] == nil {
-			dest[key] = value
-		} else {
-			switch value.(type) {
-			case Config:
-				dest[key].(Config).Merge(value.(Config))
-			case []any:
-				var tmp []any = make([]any, 0, len(dest[key].([]any))+len(value.([]any)))
-				for _, v := range value.([]any) {
-					if _, ok := v.(Config); ok {
-						var cp Config = make(Config)
-						cp.Merge(v.(Config))
-						tmp = append(tmp, cp)
-					} else {
-						tmp = append(tmp, v)
-					}
-				}
-				dest[key] = append(tmp, dest[key].([]any)...)
-			default:
-				dest[key] = value
+		switch value.(type) {
+		case Config:
+			if dest[key] == nil {
+				dest[key] = make(Config)
 			}
+			dest[key].(Config).Merge(value.(Config))
+		case []any:
+			if dest[key] == nil {
+				dest[key] = make([]any, 0)
+			}
+			var tmp []any = make([]any, 0, len(dest[key].([]any))+len(value.([]any)))
+			for _, v := range value.([]any) {
+				if _, ok := v.(Config); ok {
+					var cp Config = make(Config)
+					cp.Merge(v.(Config))
+					tmp = append(tmp, cp)
+				} else {
+					tmp = append(tmp, v)
+				}
+			}
+			dest[key] = append(tmp, dest[key].([]any)...)
+		default:
+			dest[key] = value
 		}
 	}
 }
