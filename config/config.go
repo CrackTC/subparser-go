@@ -37,7 +37,15 @@ func (dest Config) Merge(src Config) {
 			case Config:
 				dest[key].(Config).Merge(value.(Config))
 			case []interface{}:
-				dest[key] = append(value.([]interface{}), dest[key].([]interface{})...)
+				for _, v := range value.([]interface{}) {
+					if _, ok := v.(Config); ok {
+						var cp Config = make(Config)
+						cp.Merge(v.(Config))
+						dest[key] = append(dest[key].([]interface{}), cp)
+					} else {
+						dest[key] = append(dest[key].([]interface{}), v)
+					}
+				}
 			default:
 				dest[key] = value
 			}
